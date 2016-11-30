@@ -1,0 +1,57 @@
+<script type="text/javascript"> var hitDB =  {{{ scraped }}}; </script>
+
+<!DOCTYPE html>
+<html>
+	<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+		<meta charset="utf-8">
+		<title>Blocklist</title>
+	</head>
+	<body>
+		<textarea class="form-control" id="blocklist" placeholder="Separate requesters with |"></textarea>
+		<label><input type="checkbox" value="" class="ck">Show blocked hits</label>
+		<button type="button" id="updateBlocklist" class="btn btn-primary">Update</button>
+
+		<div id="hitList"></div>
+
+	</body>
+</html> 
+
+<script type="text/javascript">
+
+$( document ).ready(function() {
+
+	let blockArray = [];
+
+	initRenderHitDB();
+
+	$('.hitbtn').click(function() {
+		console.log($(this).html());
+		blockArray.push($(this).html());
+		$('.hitbtn:contains("' + $(this).html() + '")').addClass('btn-danger').removeClass('btn-primary').attr('disabled', true);
+		$('#blocklist').val(blockArray.join('|'));
+	});
+
+	$('#updateBlocklist').click( () => updateRenderHitDB(blockArray) );
+});
+
+function initRenderHitDB() {
+	for (let a in hitDB)	
+		$('#hitList').append('<div class="hitcapsule"><button type="button" class="btn btn-primary hitbtn">' + hitDB[a].requester + ' - ' + hitDB[a].title + ' - ' + hitDB[a].pay + '</button></div>');
+}
+
+function updateRenderHitDB(arr) {
+	$('.hitbtn').each( (k,v) => {
+		if (arr.indexOf($(v).html()) !== -1 && $('.ck').prop('checked') === false)
+			$(v).hide();
+		else if ($('.ck').prop('checked') === true)
+			$(v).show();
+	});
+
+}
+
+
+
+</script>

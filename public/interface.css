@@ -1,0 +1,66 @@
+			.form-control, div {
+				font-size: 12px;
+				font-family: calibri;
+			}
+
+			.hitcapsule {
+				border: solid 1px #888;
+			}
+
+			body {
+				background-color: #ddd;
+			}
+
+			.defaulted {
+				background-color: #eee;
+			}
+
+			.blocked {
+				font-style: italic;
+				background-color: #ef7b77;
+			}
+
+			.included {
+				font-weight: bold;
+				background-color: #5cb85c;
+			}
+
+			textarea#blockField {
+				background-color: #EFDBDA;
+			}
+
+			textarea#includeField {
+				background-color: #DBEFD4;
+			}			
+
+			button.toggledesc {
+				background-color: transparent;
+				font-family: courier;
+				border: 0px;
+				font-style: normal;
+				border-radius: 25%;
+				padding: 1px;
+				margin: 0px;
+			}
+
+			button.blockit {
+				background-color: transparent;
+				font-family: courier;
+				border: 0px;
+				font-style: normal;
+				padding: 1px;
+				margin: 0px;
+			}
+
+			button.includeit {
+				background-color: transparent;
+				font-family: courier;
+				border: 0px;
+				font-style: normal;
+				padding: 1px;
+				margin: 0px;
+			}			
+
+			button.toggleoptions {
+				border: 1px solid #000;
+			}
