@@ -28,7 +28,17 @@
 			</div>
 
 			<div>
-				<label><input type="checkbox" id="showblocked">Show blocked hits</input></label>
+				<label><input type="checkbox" id="showblocked">Show blocked hits</input></label> | 
+				<label><input type="checkbox" id="autoreload">Reload every</input></label> 
+				<select name="reloadevery">
+					<option value="5">5s</option>
+				    <option value="10">10s</option>
+					<option value="20">20s</option>
+				    <option value="30">30s</option>
+					<option value="45">45s</option>
+				    <option value="60">60s</option>
+				</select> | 
+				<label><input type="checkbox" id="emailme"></input> Email </label><input type="text" id="emailaddress">
 			</div>
 		</div>
 
@@ -55,21 +65,44 @@ function getHits() {
 $(document).ready(function() {
 
 	getHits().done(function(data) {
-		hitDB = data;
+		let hitDB = data;
 
-		let blockArray = localStorage.getItem('blockstore') ? JSON.parse(localStorage.getItem('blockstore')) : ['ScoutIt','p9r','Crowdsurf Support', 'Ibotta', 'Speechpad'];		//default block list and include list
-		let includeArray = localStorage.getItem('includestore') ? JSON.parse(localStorage.getItem('includestore')) : ['Sergey Schmidt'];
+		let options = localStorage.getItem('scraperoptions') ? JSON.parse(localStorage.getItem('scraperoptions')) : 
+			{ blockArray: ['ScoutIt','p9r','Crowdsurf Support', 'Ibotta', 'Speechpad'],
+			includeArray: ['Sergey Schmidt'],
+			showblocked: false,
+			reloadevery: false,
+			reloadinterval: 5,
+			emailit: false,
+			email: ''};
+
+		//let blockArray = localStorage.getItem('blockstore') ? JSON.parse(localStorage.getItem('blockstore')) : ['ScoutIt','p9r','Crowdsurf Support', 'Ibotta', 'Speechpad'];		//default block list and include list
+		//let includeArray = localStorage.getItem('includestore') ? JSON.parse(localStorage.getItem('includestore')) : ['Sergey Schmidt'];
 		
-		initRenderHitDB(blockArray, includeArray);					//first render of page
-		updateRender(blockArray, includeArray);						
+		initRenderHitDB(options, hitDB);					//first render of page
 
-		$('input#showblocked').click( () => {						//show/hide blocked hits
-			updateRender(blockArray, includeArray);
-		})
+		updateRender(options);						
+
+		$('input#showblocked').click( function () {						//show/hide blocked hits
+			options.showblocked = this.checked;
+			updateRender(options);
+		});
+
+		$('input#autoreload').click( function () {						//show/hide blocked hits
+			options.reloadevery = this.checked;
+			updateRender(options);
+		});
+
+		$('input#emailme').click( function () {						//show/hide blocked hits
+			options.emailit = this.checked;
+			options.email = $('input#emailaddress').val();
+			$('input#emailaddress').attr('disabled', !options.emailit);
+			updateRender(options);
+		});
 
 		$('button.toggleoptions').click( () => { 
-			blockArray = $('#blockField').val().split('|');
-			includeArray = $('#includeField').val().split('|');
+			options.blockArray = $('#blockField').val().split('|');
+			options.includeArray = $('#includeField').val().split('|');
 			$('div#options').toggle();
 		});
 
@@ -80,45 +113,49 @@ $(document).ready(function() {
 
 		$('.blockit').click( function () {							//add hit or requester to block list
 			let bl = $(this).parent().text().replace(/^(xi |-xi |\+xi )/,'');
-			blockArray.push(bl);
-			updateRender(blockArray, includeArray);
+			options.blockArray.push(bl);
+			updateRender(options);
 		});
 
 		$('.includeit').click( function () {						//add hit or requester to include list
 			let inc = $(this).parent().text().replace(/^(xi |-xi |\+xi )/,'');
-			includeArray.push(inc);
-			updateRender(blockArray, includeArray);
+			options.includeArray.push(inc);
+			updateRender(options);
 		});
 
 	});
 
 });
 
-function initRenderHitDB(blocklist, includelist) {				//set block/include textareas to actual block/include list and initial render
-	$('#blockField').val(blocklist.join('|'));
-	$('#includeField').val(includelist.join('|'));
-	for (let a in hitDB)	
-		$('.hitgroup').append(`<div class="container hitcapsule row"><div class="row"><div class="col-lg-3"><button type="button" class="toggledesc">+</button><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${hitDB[a].requester}</div><div class="col-lg-7"><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${hitDB[a].title}</div><div class="col-lg-1"><a href="${hitDB[a].url}" target="_blank">${hitDB[a].pay}</a></div><div class="col-lg-1">${hitDB[a].timer}</div></div><div class="row hitdesc" hidden><div class="col-lg-6">Description: ${hitDB[a].description}</div><div class="col-lg-1">Qualifications:</div><div class="col-lg-5">${hitDB[a].qual.join('<br>')}</div></div></div>`);
+function initRenderHitDB(opt, db) {				//set block/include textareas to actual block/include list and initial render
+	$('#blockField').val(opt.blockArray.join('|'));
+	$('#includeField').val(opt.includeArray.join('|'));
+	for (let a in db)	
+		$('.hitgroup').append(`<div class="container hitcapsule row"><div class="row"><div class="col-lg-3"><button type="button" class="toggledesc">+</button><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${db[a].requester}</div><div class="col-lg-7"><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${db[a].title}</div><div class="col-lg-1"><a href="${db[a].url}" target="_blank">${db[a].pay}</a></div><div class="col-lg-1">${db[a].timer}</div></div><div class="row hitdesc" hidden><div class="col-lg-6">Description: ${db[a].description}</div><div class="col-lg-1">Qualifications:</div><div class="col-lg-5">${db[a].qual.join('<br>')}</div></div></div>`);
+	$('input#showblocked').attr('checked', opt.showblocked);
+	$('input#autoreload').attr('checked', opt.reloadevery);
+	$('input#emailme').attr('checked', opt.emailit);
+	$('input#emailaddress').val(opt.email);
+	$('input#emailaddress').attr('disabled', !opt.emailit);
+
 }
 
-function updateRender(blocklist, includelist) {					//set textareas to actual lists. set everything to default class, then assign blocks and includes
-	localStorage.setItem('blockstore', JSON.stringify(blocklist));
-	localStorage.setItem('includestore', JSON.stringify(includelist));
-	$('#blockField').val(blocklist.join('|'));
-	$('#includeField').val(includelist.join('|'));
+function updateRender(opt) {					//set textareas to actual lists. set everything to default class, then assign blocks and includes
+	localStorage.setItem('scraperoptions', JSON.stringify(opt));
+	$('#blockField').val(opt.blockArray.join('|'));
+	$('#includeField').val(opt.includeArray.join('|'));
 	$('div.hitcapsule').removeClass('included').removeClass('blocked').addClass('defaulted');
-	for (let x in blocklist) {
-		if (blocklist[x])
-			$('div.hitcapsule:contains("' + blocklist[x] + '")').removeClass('included').addClass('blocked');
+	for (let x in opt.blockArray) {
+		if (opt.blockArray[x])
+			$('div.hitcapsule:contains("' + opt.blockArray[x] + '")').removeClass('included').addClass('blocked');
 	}
-	for (let y in includelist) {
-		if (includelist[y])
-			$('div.hitcapsule:contains("' + includelist[y] + '")').removeClass('blocked').addClass('included');
+	for (let y in opt.includeArray) {
+		if (opt.includeArray[y])
+			$('div.hitcapsule:contains("' + opt.includeArray[y] + '")').removeClass('blocked').addClass('included');
 	}
 	if ($('#showblocked').prop('checked') === true)				//show blocked hits if checkbox is checked
 		$('div.blocked').show();
 	else $('div.blocked').hide();
-
 }
 
 </script>
