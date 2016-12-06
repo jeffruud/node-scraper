@@ -9,7 +9,7 @@
 	</head>
 	<body>
 		<div class="container">
-			<button type="submit" class="btn toggleoptions">Options</button>
+			<button type="submit" class="btn toggleoptions">Options</button> <span id="countdown" hidden> </span>
 		</div>
 
 		<div class="container" id="options" hidden>
@@ -30,7 +30,7 @@
 			<div>
 				<label><input type="checkbox" id="showblocked">Show blocked hits</input></label> | 
 				<label><input type="checkbox" id="autoreload">Reload every</input></label> 
-				<select name="reloadevery">
+				<select id="reloaddropdown">
 					<option value="5">5s</option>
 				    <option value="10">10s</option>
 					<option value="20">20s</option>
@@ -44,10 +44,10 @@
 
 		<div class="container hitgroup">
 			<div class="row">
-				<div class="col-lg-3"><h5>Requester</h5></div>
-				<div class="col-lg-7"><h5>HIT Title</h5></div>
-				<div class="col-lg-1"><h5>Pay</h5></div>
-				<div class="col-lg-1"><h5>Timer</h5></div>
+				<div class="col-md-3"><h5>Requester</h5></div>
+				<div class="col-md-7"><h5>HIT Title</h5></div>
+				<div class="col-md-1"><h5>Pay</h5></div>
+				<div class="col-md-1"><h5>Timer</h5></div>
 			</div>
 		</div>
 	</body>
@@ -66,6 +66,7 @@ $(document).ready(function() {
 
 	getHits().done(function(data) {
 		let hitDB = data;
+		let rld;
 
 		let options = localStorage.getItem('scraperoptions') ? JSON.parse(localStorage.getItem('scraperoptions')) : 
 			{ blockArray: ['ScoutIt','p9r','Crowdsurf Support', 'Ibotta', 'Speechpad'],
@@ -81,7 +82,20 @@ $(document).ready(function() {
 		
 		initRenderHitDB(options, hitDB);					//first render of page
 
-		updateRender(options);						
+		updateRender(options);				
+
+		if ($('input#autoreload').is(':checked')) {
+			let timer = $('#reloaddropdown').val();
+			console.log(timer);
+			options.reloadinterval = timer;
+			options.reloadevery = true;
+			updateRender(options);
+			$('#countdown').show();
+			$('#countdown').text($('#reloaddropdown').val());
+			rld = setInterval(function() {
+				window.location.reload();
+			}, 1000 * timer);
+		} else { $('#countdown').hide(); }
 
 		$('input#showblocked').click( function () {						//show/hide blocked hits
 			options.showblocked = this.checked;
@@ -91,6 +105,24 @@ $(document).ready(function() {
 		$('input#autoreload').click( function () {						//show/hide blocked hits
 			options.reloadevery = this.checked;
 			updateRender(options);
+		});
+
+		$('#reloaddropdown').change( function () {
+			if ($('input#autoreload').is(':checked')) {
+				let timer = $('#reloaddropdown').val();
+				console.log(timer);
+				options.reloadinterval = timer;
+				options.reloadevery = true;
+				updateRender(options);
+				$('#countdown').show();
+				$('#countdown').text($('#reloaddropdown').val());
+				rld = setInterval(function() {
+					window.location.reload();
+				}, 1000 * timer);
+			} else { 
+				$('#countdown').hide(); 
+				options.reloadevery = false;
+			}
 		});
 
 		$('input#emailme').click( function () {						//show/hide blocked hits
@@ -104,6 +136,11 @@ $(document).ready(function() {
 			options.blockArray = $('#blockField').val().split('|');
 			options.includeArray = $('#includeField').val().split('|');
 			$('div#options').toggle();
+
+			clearTimeout(rld);			
+			$('#countdown').text('stopped');
+			options.reloadinterval = $('#reloaddropdown').val();
+			updateRender(options);
 		});
 
 		$('.toggledesc').click( function () {						//toggle hit descriptions
@@ -131,12 +168,13 @@ function initRenderHitDB(opt, db) {				//set block/include textareas to actual b
 	$('#blockField').val(opt.blockArray.join('|'));
 	$('#includeField').val(opt.includeArray.join('|'));
 	for (let a in db)	
-		$('.hitgroup').append(`<div class="container hitcapsule row"><div class="row"><div class="col-lg-3"><button type="button" class="toggledesc">+</button><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${db[a].requester}</div><div class="col-lg-7"><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${db[a].title}</div><div class="col-lg-1"><a href="${db[a].url}" target="_blank">${db[a].pay}</a></div><div class="col-lg-1">${db[a].timer}</div></div><div class="row hitdesc" hidden><div class="col-lg-6">Description: ${db[a].description}</div><div class="col-lg-1">Qualifications:</div><div class="col-lg-5">${db[a].qual.join('<br>')}</div></div></div>`);
+		$('.hitgroup').append(`<div class="container hitcapsule row"><div class="row"><div class="col-md-3"><button type="button" class="toggledesc">+</button><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${db[a].requester}</div><div class="col-md-7"><button type="button" class="blockit">x</button><button type="button" class="includeit">i</button> ${db[a].title}</div><div class="col-md-1"><a href="${db[a].url}" target="_blank">${db[a].pay}</a></div><div class="col-md-1">${db[a].timer}</div></div><div class="row hitdesc" hidden><div class="col-md-6">Description: ${db[a].description}</div><div class="col-md-1">Qualifications:</div><div class="col-md-5">${db[a].qual.join('<br>')}</div></div></div>`);
 	$('input#showblocked').attr('checked', opt.showblocked);
 	$('input#autoreload').attr('checked', opt.reloadevery);
 	$('input#emailme').attr('checked', opt.emailit);
 	$('input#emailaddress').val(opt.email);
 	$('input#emailaddress').attr('disabled', !opt.emailit);
+	$('#reloaddropdown').val(opt.reloadinterval);
 
 }
 
